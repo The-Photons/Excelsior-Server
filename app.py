@@ -39,7 +39,7 @@ def list_dir():
 
     url_params = request.args
     path = Path(config["files_dir"]) / url_params.get("path", "")
-    return list_items_in_dir(path)
+    return {"status": "ok", "content": list_items_in_dir(path)}
 
 
 @app.route("/get-file/<path:unsafe_path>", methods=["GET"])
