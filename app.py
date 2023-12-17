@@ -7,9 +7,13 @@ from yaml import safe_load
 from pathlib import Path
 
 from src.io import list_items_in_dir, is_path_safe
+from src.encrypt import get_key, encrypt, decrypt
 
 # CONSTANTS
-CONFIG_FILE = "config.yml"
+CONFIG_FILE = Path("config.yml")
+SECRETS_FILE = Path("secrets.yml")
+
+ENCRYPTED_EXTENSION = ".encrypted"
 
 # SETUP
 # Set up flask application
@@ -18,6 +22,9 @@ app = Flask(__name__)
 # Get configuration
 with open(CONFIG_FILE, "r") as config:
     config = safe_load(config)
+
+# Get the secret key
+key = get_key(SECRETS_FILE)
 
 
 # ROUTES
@@ -45,7 +52,7 @@ def get_file(unsafe_path: str):
     """
 
     # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    unsafe_path = Path(config["files_dir"], f"{unsafe_path}{ENCRYPTED_EXTENSION}")
 
     # Check the requested path by the user
     if not is_path_safe(config["files_dir"], unsafe_path):
@@ -54,13 +61,18 @@ def get_file(unsafe_path: str):
     # If reached here the path should be safe
     path = unsafe_path
 
-    # Try to send the file as base64
+    # Try to get the file
     try:
         with open(path, "rb") as f:
-            content = base64.b64encode(f.read())
-            return {"status": "ok", "content": content.decode("utf-8")}
+            content = f.read()
     except FileNotFoundError:
         return {"status": "not found"}
+
+    # Decrypt the file using the key
+    content = decrypt(content, key)
+
+    # Then encode the content in base64 and send it
+    return {"status": "ok", "content": base64.b64encode(content).decode("utf-8")}
 
 
 @app.route("/create-dir/<path:unsafe_path>", methods=["POST"])
@@ -89,7 +101,7 @@ def create_dir(unsafe_path: str):
         return {"status": "fail"}
 
 
-@app.route("/upload-file/<path:unsafe_path>", methods=["POST"])
+@app.route("/create-file/<path:unsafe_path>", methods=["POST"])
 def create_file(unsafe_path: str):
     """
     Creates a new file in the files' directory.
@@ -99,7 +111,7 @@ def create_file(unsafe_path: str):
     """
 
     # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    unsafe_path = Path(config["files_dir"], f"{unsafe_path}{ENCRYPTED_EXTENSION}")
     content = request.form.get("content")
 
     # Check the requested path by the user
@@ -109,10 +121,14 @@ def create_file(unsafe_path: str):
     # If reached here the path should be safe
     path = unsafe_path
 
-    # Try to send the file as base64
+    # Encrypt the content of the file
+    content = base64.b64decode(content)
+    content = encrypt(content, key)
+
+    # Now save the file
     try:
         with open(path, "wb") as f:
-            f.write(base64.b64decode(content))
+            f.write(content)
             return {"status": "ok"}
     except FileNotFoundError:
         return {"status": "not found"}
@@ -153,7 +169,7 @@ def delete_file(unsafe_path: str):
     """
 
     # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    unsafe_path = Path(config["files_dir"], f"{unsafe_path}{ENCRYPTED_EXTENSION}")
 
     # Check the requested path by the user
     if not is_path_safe(config["files_dir"], unsafe_path):
