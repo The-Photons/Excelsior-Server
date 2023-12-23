@@ -178,3 +178,9 @@ def delete_file(unsafe_path: str):
         return {"status": "ok"}
     except OSError:
         return {"status": "fail"}
+
+
+# Miscellaneous routes
+@app.route("/ping", methods=["GET"])
+def ping():
+    return {"status": "ok", "content": "pong"}
