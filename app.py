@@ -1,5 +1,6 @@
 # IMPORTS
 import base64
+import json
 import os
 
 from flask import Flask, request, abort
@@ -20,23 +21,49 @@ app = Flask(__name__)
 with open(CONFIG_FILE, "r") as config:
     config = safe_load(config)
 
-# Check if the files directory exists
-if not os.path.isdir(config["files_dir"]):
-    os.mkdir(config["files_dir"])
+# Check if the data and files directory exists
+dataDir = Path(config["data_dir"])
+if not os.path.isdir(dataDir):
+    os.mkdir(dataDir)
+
+filesDir = Path(dataDir, config["files_dir"])
+if not os.path.isdir(filesDir):
+    os.mkdir(filesDir)
 
 
 # ROUTES
-# CRUD Operations
+# Key transfer operations
+@app.route("/get-encryption-params", methods=["GET"])
+def get_encryption_parameters():
+    """
+    Gets the encryption parameters from the `encrypt_params_file` file.
+    :return: Dictionary of the status of the operation and the encryption parameters.
+    """
+
+    # TODO: Handle missing AES key file
+    with open(os.path.join(dataDir, config["encrypt_params_file"]), "r") as f:
+        encryption_params = json.load(f)
+        return {
+            "status": "ok",
+            "iv": encryption_params.get("iv", ""),
+            "salt": encryption_params.get("salt", ""),
+            "test_str": encryption_params.get("test_str", ""),
+            "encrypted_key": encryption_params.get("encrypted_key", "")
+        }
+
+
+# CRUD operations
 @app.route("/list-dir", methods=["GET"])
 def list_dir():
     """
     Lists what is in the specified directory.
     Directory to list is to be specified using URL parameters.
-    :return: List of items in the specified directory, along with their type.
+    :return: Dictionary containing the status of the operation and the list of items in the specified directory, along
+             with their type.
     """
 
     url_params = request.args
-    path = Path(config["files_dir"]) / url_params.get("path", "")
+    path = Path(filesDir) / url_params.get("path", "")
     return {"status": "ok", "content": list_items_in_dir(path)}
 
 
@@ -49,11 +76,11 @@ def get_file(unsafe_path: str):
              is the Base64 content of the file.
     """
 
-    # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    # Add the data directory to the unsafe path
+    unsafe_path = Path(filesDir, unsafe_path)
 
     # Check the requested path by the user
-    if not is_path_safe(config["files_dir"], unsafe_path):
+    if not is_path_safe(filesDir, unsafe_path):
         abort(403)
 
     # If reached here the path should be safe
@@ -73,16 +100,16 @@ def get_file(unsafe_path: str):
 @app.route("/create-dir/<path:unsafe_path>", methods=["POST"])
 def create_dir(unsafe_path: str):
     """
-    Creates a new directory in the files' directory.
+    Creates a new directory in the data' directory.
     :param unsafe_path: Path to create the directory.
     :return: Status of the creation -- `ok` or `fail`.
     """
 
-    # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    # Add the data directory to the unsafe path
+    unsafe_path = Path(filesDir, unsafe_path)
 
     # Check the requested path by the user
-    if not is_path_safe(config["files_dir"], unsafe_path):
+    if not is_path_safe(filesDir, unsafe_path):
         abort(403)
 
     # If reached here the path should be safe
@@ -99,18 +126,18 @@ def create_dir(unsafe_path: str):
 @app.route("/create-file/<path:unsafe_path>", methods=["POST"])
 def create_file(unsafe_path: str):
     """
-    Creates a new file in the files' directory.
+    Creates a new file in the data' directory.
     The content of the file should be specified in Base64 using a POST form, with the key `content`.
     :param unsafe_path: Path to create the file.
     :return: Status of the creation -- `ok` or `not found`.
     """
 
-    # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    # Add the data directory to the unsafe path
+    unsafe_path = Path(filesDir, unsafe_path)
     content = request.form.get("content")
 
     # Check the requested path by the user
-    if not is_path_safe(config["files_dir"], unsafe_path):
+    if not is_path_safe(filesDir, unsafe_path):
         abort(403)
 
     # If reached here the path should be safe
@@ -136,11 +163,11 @@ def delete_dir(unsafe_path: str):
     :return: Status of the deletion -- `ok` or `fail`.
     """
 
-    # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    # Add the data directory to the unsafe path
+    unsafe_path = Path(filesDir, unsafe_path)
 
     # Check the requested path by the user
-    if not is_path_safe(config["files_dir"], unsafe_path):
+    if not is_path_safe(filesDir, unsafe_path):
         abort(403)
 
     # If reached here the path should be safe
@@ -162,11 +189,11 @@ def delete_file(unsafe_path: str):
     :return: Status of the deletion -- `ok` or `fail`.
     """
 
-    # Add the files directory to the unsafe path
-    unsafe_path = Path(config["files_dir"], unsafe_path)
+    # Add the data directory to the unsafe path
+    unsafe_path = Path(filesDir, unsafe_path)
 
     # Check the requested path by the user
-    if not is_path_safe(config["files_dir"], unsafe_path):
+    if not is_path_safe(filesDir, unsafe_path):
         abort(403)
 
     # If reached here the path should be safe
@@ -180,7 +207,7 @@ def delete_file(unsafe_path: str):
         return {"status": "fail"}
 
 
-# Miscellaneous routes
+# Miscellaneous operations
 @app.route("/ping", methods=["GET"])
 def ping():
     return {"status": "ok", "content": "pong"}

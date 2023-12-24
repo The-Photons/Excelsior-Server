@@ -1,1 +1,3 @@
+data_dir: data
 files_dir: files
+encrypt_params_file: encrypt_params.json
