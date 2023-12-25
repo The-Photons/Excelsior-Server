@@ -63,7 +63,12 @@ def list_dir():
     """
 
     url_params = request.args
-    path = Path(filesDir) / url_params.get("path", "")
+    unsafe_path = Path(filesDir, url_params.get("path", ""))
+    if not is_path_safe(filesDir, unsafe_path):
+        abort(403)
+
+    # If reached here the path should be safe
+    path = unsafe_path
     return {"status": "ok", "content": list_items_in_dir(path)}
 
 

@@ -25,7 +25,7 @@ def list_items_in_dir(directory: os.PathLike[str]) -> Optional[list[tuple[str, s
             item_type = "directory"
         items.append((thing, item_type))
 
-    return items
+    return sorted(items, key=lambda tpl: f"{tpl[1]}{tpl[0]}")
 
 
 def is_path_safe(files_dir: os.PathLike[str], unsafe_path: os.PathLike[str]) -> bool:
