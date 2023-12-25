@@ -1,6 +1,7 @@
 # IMPORTS
 import base64
 import json
+import logging
 import os
 
 from flask import request, abort
@@ -59,8 +60,14 @@ def list_dir():
              with their type.
     """
 
+    # Get the path from the URL parameters
     url_params = request.args
-    unsafe_path = Path(filesDir, url_params.get("path", ""))
+    unsafe_path = url_params.get("path", "")
+
+    # Now properly create the unsafe path WRT the files directory
+    unsafe_path = Path(filesDir, unsafe_path)
+
+    # Check the requested path by the user
     if not is_path_safe(filesDir, unsafe_path):
         abort(403)
 
@@ -128,7 +135,7 @@ def create_dir(unsafe_path: str):
 @app.route("/create-file/<path:unsafe_path>", methods=["POST"])
 def create_file(unsafe_path: str):
     """
-    Creates a new file in the data' directory.
+    Creates a new file in the data directory.
     The content of the file should be specified in Base64 using a POST form, with the key `content`.
     :param unsafe_path: Path to create the file.
     :return: Status of the creation -- `ok` or `not found`.

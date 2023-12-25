@@ -2,9 +2,31 @@
 import os
 from typing import Optional
 
+# CONSTANTS
+KILOBYTE = 1000
+MEGABYTE = KILOBYTE * KILOBYTE
+GIGABYTE = KILOBYTE * KILOBYTE * KILOBYTE
+
 
 # FUNCTIONS
-def list_items_in_dir(directory: os.PathLike[str]) -> Optional[list[tuple[str, str]]]:
+def nice_file_size(size: int, dp=2) -> str:
+    """
+    Converts a raw size in bytes into a nicer display text.
+    :param size: Size of the file in bytes.
+    :param dp: Number of decimal places to round the number of bytes.
+    :return: Nicer display format of the size.
+    """
+
+    if size / GIGABYTE >= 1:
+        return f"{size / GIGABYTE:.{dp}0f} GB"
+    if size / MEGABYTE >= 1:
+        return f"{size / MEGABYTE:.{dp}0f} MB"
+    if size / KILOBYTE >= 1:
+        return f"{size / KILOBYTE:.{dp}0f} kB"
+    return f"{size} B"
+
+
+def list_items_in_dir(directory: os.PathLike[str]) -> Optional[list[dict[str, str]]]:
     """
     List all data in the given directory.
     :param directory: Directory to give the list of data of.
@@ -17,15 +39,20 @@ def list_items_in_dir(directory: os.PathLike[str]) -> Optional[list[tuple[str, s
     except FileNotFoundError:
         return None
 
-    # Now determine what the types of things are
+    # Now get the properties of the file
     items = []
-    for thing in dir_content:
+    for file in dir_content:
+        item_stats = os.stat(os.path.join(directory, file))
         item_type = "file"
-        if os.path.isdir(os.path.join(directory, thing)):
+        if os.path.isdir(os.path.join(directory, file)):
             item_type = "directory"
-        items.append((thing, item_type))
+        items.append({
+            "name": file,
+            "type": item_type,
+            "size": nice_file_size(item_stats.st_size)
+        })
 
-    return sorted(items, key=lambda tpl: f"{tpl[1]}{tpl[0]}")
+    return sorted(items, key=lambda item: f"{item['type']}{item['name']}")
 
 
 def is_path_safe(files_dir: os.PathLike[str], unsafe_path: os.PathLike[str]) -> bool:
