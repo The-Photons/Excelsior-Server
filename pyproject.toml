@@ -1,0 +1,23 @@
+[build-system]
+requires = ["flit_core<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "encrypted_file_server"
+authors = [
+  { name="PhotonicGluon", email="contact@overwrite.site" },
+]
+description = "An encrypted file server."
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.8"
+dependencies = [
+    "Flask~=3.0.0",
+    "Flask-Limiter~=3.5.0",
+    "PyYAML~=6.0.1",
+    "gunicorn"
+]
+dynamic = ["version"]
+
+[project.scripts]
+start_encrypted_file_server = "encrypted_file_server.wsgi:run"

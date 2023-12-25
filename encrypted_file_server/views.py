@@ -3,20 +3,17 @@ import base64
 import json
 import os
 
-from flask import Flask, request, abort
+from flask import request, abort
 from yaml import safe_load
 from pathlib import Path
 
-from src.io import list_items_in_dir, is_path_safe
+from encrypted_file_server import app
+from encrypted_file_server.src.io import list_items_in_dir, is_path_safe
 
 # CONSTANTS
 CONFIG_FILE = Path("config.yml")
-SECRETS_FILE = Path("secrets.yml")
 
 # SETUP
-# Set up flask application
-app = Flask(__name__)
-
 # Get configuration
 with open(CONFIG_FILE, "r") as config:
     config = safe_load(config)
