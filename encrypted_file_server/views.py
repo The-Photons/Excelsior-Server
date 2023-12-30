@@ -109,7 +109,7 @@ def get_file(unsafe_path: str):
 @app.route("/create-dir/<path:unsafe_path>", methods=["POST"])
 def create_dir(unsafe_path: str):
     """
-    Creates a new directory in the data' directory.
+    Creates a new directory in the data directory.
     :param unsafe_path: Path to create the directory.
     :return: Status of the creation -- `ok` or `fail`.
     """
@@ -124,12 +124,12 @@ def create_dir(unsafe_path: str):
     # If reached here the path should be safe
     path = unsafe_path
 
-    # Create the folder
+    # Create all missing folders and the requested folder
     try:
-        os.mkdir(path)
+        os.makedirs(path)
         return {"status": "ok"}
-    except FileNotFoundError:
-        return {"status": "fail"}
+    except (FileNotFoundError, FileExistsError) as e:
+        return {"status": "fail", "message": str(e)}
 
 
 @app.route("/create-file/<path:unsafe_path>", methods=["POST"])
