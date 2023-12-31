@@ -2,6 +2,7 @@
 import base64
 import json
 import os
+import shutil
 
 from flask import request, abort
 from yaml import safe_load
@@ -62,7 +63,7 @@ def list_dir():
     # Get the path from the URL parameters
     url_params = request.args
     unsafe_path = url_params.get("path", "")
-    alternate_units = url_params.get("alternate_units", "False")
+    alternate_units = url_params.get("alternate_units", False)
 
     try:
         alternate_units = bool(alternate_units)
@@ -104,8 +105,8 @@ def get_file(unsafe_path: str):
     try:
         with open(path, "rb") as f:
             content = f.read()
-    except FileNotFoundError:
-        return {"status": "not found"}
+    except FileNotFoundError as e:
+        return {"status": "not found", "message": str(e)}
 
     # Then encode the content in base64 and send it
     return {"status": "ok", "content": base64.b64encode(content).decode("utf-8")}
@@ -165,15 +166,15 @@ def create_file(unsafe_path: str):
         with open(path, "wb") as f:
             f.write(content)
             return {"status": "ok"}
-    except FileNotFoundError:
-        return {"status": "not found"}
+    except FileNotFoundError as e:
+        return {"status": "not found", "message": str(e)}
 
 
-@app.route("/delete-dir/<path:unsafe_path>", methods=["DELETE"])
-def delete_dir(unsafe_path: str):
+@app.route("/delete-item/<path:unsafe_path>", methods=["DELETE"])
+def delete_item(unsafe_path: str):
     """
-    Deletes a directory.
-    :param unsafe_path: Path to the directory to delete.
+    Deletes an item (i.e. file or directory).
+    :param unsafe_path: Path to the item to delete.
     :return: Status of the deletion -- `ok` or `fail`.
     """
 
@@ -187,38 +188,15 @@ def delete_dir(unsafe_path: str):
     # If reached here the path should be safe
     path = unsafe_path
 
-    # Delete the directory
+    # Delete the item
     try:
-        os.rmdir(path)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
         return {"status": "ok"}
-    except OSError:
-        return {"status": "fail"}
-
-
-@app.route("/delete-file/<path:unsafe_path>", methods=["DELETE"])
-def delete_file(unsafe_path: str):
-    """
-    Deletes a file.
-    :param unsafe_path: Path to the file to delete.
-    :return: Status of the deletion -- `ok` or `fail`.
-    """
-
-    # Add the data directory to the unsafe path
-    unsafe_path = Path(filesDir, unsafe_path)
-
-    # Check the requested path by the user
-    if not is_path_safe(filesDir, unsafe_path):
-        abort(403)
-
-    # If reached here the path should be safe
-    path = unsafe_path
-
-    # Delete the directory
-    try:
-        os.remove(path)
-        return {"status": "ok"}
-    except OSError:
-        return {"status": "fail"}
+    except OSError as e:
+        return {"status": "fail", "message": str(e)}
 
 
 # Miscellaneous operations

@@ -152,7 +152,8 @@ cython_debug/
 #.idea/
 
 # Others
-.DS_Store
-
 data
+misc
+
+.DS_Store
 secrets.yml

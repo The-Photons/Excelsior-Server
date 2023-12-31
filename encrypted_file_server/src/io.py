@@ -25,19 +25,35 @@ def nice_file_size(size: int, dp: int = 2, alternate_units: bool = False) -> str
 
     if alternate_units:
         if size / GIBIBYTE >= 1:
-            return f"{size / GIBIBYTE:.{dp}0f} GiB"
+            return f"{size / GIBIBYTE:.0{dp}f} GiB"
         if size / MEBIBYTE >= 1:
-            return f"{size / MEBIBYTE:.{dp}0f} MiB"
+            return f"{size / MEBIBYTE:.0{dp}f} MiB"
         if size / KIBIBYTE >= 1:
-            return f"{size / KIBIBYTE:.{dp}0f} KiB"
+            return f"{size / KIBIBYTE:.0{dp}f} KiB"
     else:
         if size / GIGABYTE >= 1:
-            return f"{size / GIGABYTE:.{dp}0f} GB"
+            return f"{size / GIGABYTE:.0{dp}f} GB"
         if size / MEGABYTE >= 1:
-            return f"{size / MEGABYTE:.{dp}0f} MB"
+            return f"{size / MEGABYTE:.0{dp}f} MB"
         if size / KILOBYTE >= 1:
-            return f"{size / KILOBYTE:.{dp}0f} kB"
+            return f"{size / KILOBYTE:.0{dp}f} kB"
     return f"{size} B"
+
+
+def get_dir_size(path):
+    """
+    Get the full size of the directory.
+    :param path: Path to the directory.
+    :return: Total size of the directory.
+    """
+    total_size = 0
+    for dir_path, _, filenames in os.walk(path):
+        for file in filenames:
+            file_path = os.path.join(dir_path, file)
+            if not os.path.islink(file_path):
+                total_size += os.path.getsize(file_path)
+
+    return total_size
 
 
 def list_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False) -> Optional[list[dict[str, str]]]:
@@ -55,21 +71,24 @@ def list_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False
     except FileNotFoundError:
         return None
 
-    # Now get the properties of the file
+    # Now get the properties of the item
     items = []
-    for file in dir_content:
-        item_stats = os.stat(os.path.join(directory, file))
-        item_type = "file"
-        if os.path.isdir(os.path.join(directory, file)):
+    for item in dir_content:
+        item_path = os.path.join(directory, item)
+        if os.path.isfile(item_path):
+            item_type = "file"
+            file_size = os.stat(item_path).st_size
+        else:
             item_type = "directory"
+            file_size = get_dir_size(item_path)
         items.append({
-            "name": file,
+            "name": item,
             "type": item_type,
-            "size": nice_file_size(item_stats.st_size, alternate_units=alternate_units)
+            "size": nice_file_size(file_size, alternate_units=alternate_units)
         })
 
     # Don't care about cases when sorting
-    return sorted(items, key=lambda item: f"{item['type']}-{item['name']}".lower())
+    return sorted(items, key=lambda x: f"{x['type']}-{x['name']}".lower())
 
 
 def is_path_safe(files_dir: os.PathLike[str], unsafe_path: os.PathLike[str]) -> bool:
