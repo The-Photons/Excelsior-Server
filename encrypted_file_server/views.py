@@ -1,7 +1,6 @@
 # IMPORTS
 import base64
 import json
-import logging
 import os
 
 from flask import request, abort
@@ -63,6 +62,12 @@ def list_dir():
     # Get the path from the URL parameters
     url_params = request.args
     unsafe_path = url_params.get("path", "")
+    alternate_units = url_params.get("alternate_units", "False")
+
+    try:
+        alternate_units = bool(alternate_units)
+    except ValueError:
+        alternate_units = False
 
     # Now properly create the unsafe path WRT the files directory
     unsafe_path = Path(filesDir, unsafe_path)
@@ -73,7 +78,7 @@ def list_dir():
 
     # If reached here the path should be safe
     path = unsafe_path
-    return {"status": "ok", "content": list_items_in_dir(path)}
+    return {"status": "ok", "content": list_items_in_dir(path, alternate_units=alternate_units)}
 
 
 @app.route("/get-file/<path:unsafe_path>", methods=["GET"])
