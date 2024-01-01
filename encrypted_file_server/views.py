@@ -50,6 +50,31 @@ def get_encryption_parameters():
         }
 
 
+# @app.route("/update-encryption-params", methods=["POST"])
+# def update_encryption_parameters():
+#     """
+#     Updates the encryption parameters from the `encrypt_params_file` file.
+#     :return: Dictionary of the status of the operation.
+#     """
+#
+#     # Get all the parameters from the POST request
+#     iv = request.form.get("iv")
+#     salt = request.form.get("salt")
+#     test_str = request.form.get("test_str")
+#     encrypted_key = request.form.get("encrypted_key")
+#
+#     # Update the file
+#     with open(os.path.join(dataDir, config["encrypt_params_file"]), "w") as f:
+#         json.dump({
+#             "iv": iv,
+#             "salt": salt,
+#             "test_str": test_str,
+#             "encrypted_key": encrypted_key
+#         }, f)
+#
+#     return {"status": "ok"}
+
+
 # CRUD operations
 @app.route("/list-dir", methods=["GET"])
 def list_dir():

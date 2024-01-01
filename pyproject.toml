@@ -5,19 +5,21 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "encrypted_file_server"
 authors = [
-  { name="PhotonicGluon", email="contact@overwrite.site" },
+    { name = "PhotonicGluon", email = "contact@overwrite.site" },
 ]
 description = "An encrypted file server."
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 requires-python = ">=3.8"
 dependencies = [
     "Flask~=3.0.0",
     "Flask-Limiter~=3.5.0",
+    "PyCrypto~=2.6.1",
     "PyYAML~=6.0.1",
-    "gunicorn"
+    "gunicorn~=21.2.0"
 ]
 dynamic = ["version"]
 
 [project.scripts]
 start_encrypted_file_server = "encrypted_file_server.wsgi:run"
+generate_encrypt_params = "encrypted_file_server.generate_encrypt_params:run"
