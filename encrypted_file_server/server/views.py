@@ -158,6 +158,7 @@ def create_dir(unsafe_path: str):
     :param unsafe_path: Path to create the directory.
     :return: Status of the creation -- `ok` or `fail`.
     """
+    # TODO: Secure creation, only allow authorized personnel
 
     # Add the data directory to the unsafe path
     unsafe_path = Path(filesDir, unsafe_path)
@@ -185,6 +186,7 @@ def create_file(unsafe_path: str):
     :param unsafe_path: Path to create the file.
     :return: Status of the creation -- `ok` or `not found`.
     """
+    # TODO: Secure creation, only allow authorized personnel
 
     # Add the data directory to the unsafe path
     unsafe_path = Path(filesDir, unsafe_path)
@@ -216,6 +218,7 @@ def delete_item(unsafe_path: str):
     :param unsafe_path: Path to the item to delete.
     :return: Status of the deletion -- `ok` or `fail`.
     """
+    # TODO: Secure deletion, only allow authorized personnel
 
     # Add the data directory to the unsafe path
     unsafe_path = Path(filesDir, unsafe_path)
