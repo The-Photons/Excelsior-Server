@@ -8,7 +8,7 @@ from flask import request, abort
 from yaml import safe_load
 from pathlib import Path
 
-from encrypted_file_server import app
+from encrypted_file_server import app, __version__
 from encrypted_file_server.src.io import list_items_in_dir, is_path_safe
 
 # CONSTANTS
@@ -203,3 +203,8 @@ def delete_item(unsafe_path: str):
 @app.route("/ping", methods=["GET"])
 def ping():
     return {"status": "ok", "content": "pong"}
+
+
+@app.route("/version", methods=["GET"])
+def get_version():
+    return {"status": "ok", "version": __version__}

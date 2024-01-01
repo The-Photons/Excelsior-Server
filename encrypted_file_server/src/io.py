@@ -2,6 +2,8 @@
 import os
 from typing import Optional
 
+from encrypted_file_server.src.misc import natural_sort
+
 # CONSTANTS
 KILOBYTE = 1000
 MEGABYTE = KILOBYTE * KILOBYTE
@@ -88,7 +90,7 @@ def list_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False
         })
 
     # Don't care about cases when sorting
-    return sorted(items, key=lambda x: f"{x['type']}-{x['name']}".lower())
+    return sorted(items, key=lambda x: natural_sort(f"{x['type']}-{x['name']}"))
 
 
 def is_path_safe(files_dir: os.PathLike[str], unsafe_path: os.PathLike[str]) -> bool:
