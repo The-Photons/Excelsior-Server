@@ -5,17 +5,24 @@ import os
 import shutil
 
 from flask import request, abort
-from yaml import safe_load
+from yaml import safe_load, safe_dump
 from pathlib import Path
 
-from encrypted_file_server import app, __version__
-from encrypted_file_server.src.io import list_items_in_dir, is_path_safe
-
-# CONSTANTS
-CONFIG_FILE = Path("config.yml")
+from encrypted_file_server import __version__
+from encrypted_file_server.server import app
+from encrypted_file_server.server.constants import CONFIG_FILE
+from encrypted_file_server.server.src.io import list_items_in_dir, is_path_safe
 
 # SETUP
 # Get configuration
+if not os.path.isfile(CONFIG_FILE):
+    with open(CONFIG_FILE, "w") as file:
+        safe_dump({
+            "data_dir": "data",
+            "files_dir": "files",
+            "encrypt_params_file": "encrypt_params.json"
+        }, file)
+
 with open(CONFIG_FILE, "r") as config:
     config = safe_load(config)
 
@@ -28,6 +35,13 @@ filesDir = Path(dataDir, config["files_dir"])
 if not os.path.isdir(filesDir):
     os.mkdir(filesDir)
 
+# Check if the encryption parameters file exists
+encryptedParamsFile = Path(dataDir, config["encrypt_params_file"])
+if not os.path.isfile(encryptedParamsFile):
+    print(f"'{config['encrypt_params_file']}' not found within data directory. "
+          f"Please generate '{config['encrypt_params_file']}' first before running. (Run 'generate_encrypt_params')")
+    exit(1)
+
 
 # ROUTES
 # Key transfer operations
@@ -39,7 +53,7 @@ def get_encryption_parameters():
     """
 
     # TODO: Handle missing AES key file
-    with open(os.path.join(dataDir, config["encrypt_params_file"]), "r") as f:
+    with open(encryptedParamsFile, "r") as f:
         encryption_params = json.load(f)
         return {
             "status": "ok",

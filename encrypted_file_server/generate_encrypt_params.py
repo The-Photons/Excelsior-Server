@@ -43,7 +43,7 @@ def run():
             "encrypted_key": base64.b64encode(encrypted_encryption_key).decode()
         }, f, indent=2)
 
-    print("Done!")
+    print("Done! Please place the generated 'encrypt_params.json' file within the data directory.")
 
 
 if __name__ == "__main__":

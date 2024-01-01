@@ -2,7 +2,7 @@
 import os
 from typing import Optional
 
-from encrypted_file_server.src.misc import natural_sort
+from encrypted_file_server.server.src.misc import natural_sort
 
 # CONSTANTS
 KILOBYTE = 1000

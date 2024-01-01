@@ -14,12 +14,12 @@ requires-python = ">=3.8"
 dependencies = [
     "Flask~=3.0.0",
     "Flask-Limiter~=3.5.0",
-    "PyCrypto~=2.6.1",
+    "pycryptodome~=3.19.1",
     "PyYAML~=6.0.1",
     "gunicorn~=21.2.0"
 ]
 dynamic = ["version"]
 
 [project.scripts]
-start_encrypted_file_server = "encrypted_file_server.wsgi:run"
+start_encrypted_file_server = "encrypted_file_server.server.wsgi:run"
 generate_encrypt_params = "encrypted_file_server.generate_encrypt_params:run"
