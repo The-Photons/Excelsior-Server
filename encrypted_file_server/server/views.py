@@ -11,7 +11,7 @@ from pathlib import Path
 from encrypted_file_server import __version__
 from encrypted_file_server.server import app
 from encrypted_file_server.server.constants import CONFIG_FILE
-from encrypted_file_server.server.src.io import list_items_in_dir, is_path_safe
+from encrypted_file_server.server.src.io import get_items_in_dir, traverse_dir, is_path_safe
 
 # SETUP
 # Get configuration
@@ -118,7 +118,39 @@ def list_dir():
 
     # If reached here the path should be safe
     path = unsafe_path
-    return {"status": "ok", "content": list_items_in_dir(path, alternate_units=alternate_units)}
+    return {"status": "ok", "content": get_items_in_dir(path, alternate_units=alternate_units)}
+
+
+@app.route("/recursive-list-dir", methods=["GET"])
+def recursive_list_dir():
+    """
+    Lists what is in the specified directory recursively.
+    Directory to list is to be specified using URL parameters.
+    :return: Dictionary containing the status of the operation and the list of items in the specified directory, along
+             with their type.
+    """
+
+    # Get the path from the URL parameters
+    url_params = request.args
+    unsafe_path = url_params.get("path", "")
+
+    # Now properly create the unsafe path WRT the files directory
+    unsafe_path = Path(filesDir, unsafe_path)
+
+    # Check the requested path by the user
+    if not is_path_safe(filesDir, unsafe_path):
+        abort(403)
+
+    # If reached here the path should be safe
+    path = unsafe_path
+
+    # Get the items in the directory
+    items = traverse_dir(path)
+
+    # For each path, remove the "data/files" starting string
+    items = [item[len(str(filesDir)):] for item in items]
+
+    return {"status": "ok", "content": items}
 
 
 @app.route("/get-file/<path:unsafe_path>", methods=["GET"])

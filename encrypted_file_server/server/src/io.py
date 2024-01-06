@@ -1,6 +1,7 @@
 # IMPORTS
 import os
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union, List
 
 from encrypted_file_server.server.src.misc import natural_sort
 
@@ -58,7 +59,7 @@ def get_dir_size(path):
     return total_size
 
 
-def list_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False) -> Optional[list[dict[str, str]]]:
+def get_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False) -> Optional[list[dict[str, str]]]:
     """
     List all data in the given directory.
     :param directory: Directory to give the list of data of.
@@ -93,12 +94,45 @@ def list_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False
     return sorted(items, key=lambda x: natural_sort(f"{x['type']}-{x['name']}"))
 
 
+def traverse_dir(directory: os.PathLike[str]) -> Optional[list[str]]:
+    """
+    Recursively list the items in the directory.
+
+    :param directory: Directory to give the list of data of.
+    :return: List of data in the given directory, or `None` if no data are found.
+    """
+
+    # First list all the things in the directory
+    try:
+        dir_content = os.listdir(directory)
+    except FileNotFoundError:
+        return None
+
+    # Now get the properties of the item
+    items = []
+    for item in dir_content:
+        item_path = Path(os.path.join(directory, item))
+        add_item = True
+        if os.path.isdir(item_path):
+            sub_items = traverse_dir(item_path)
+            if len(sub_items) != 0:
+                items += sub_items
+            else:
+                add_item = False
+
+        if add_item:
+            items.append(str(item_path))
+
+    # Don't care about cases when sorting
+    return sorted(items)
+
+
 def is_path_safe(files_dir: os.PathLike[str], unsafe_path: os.PathLike[str]) -> bool:
     """
     Checks if the requested file path by the user is safe.
-    :param files_dir: Path to the data' directory.
+    :param files_dir: Path to the data directory.
     :param unsafe_path: User requested path.
-    :return: True if the path is safe and False otherwise.
+    :return: `True` if the path is safe and `False` otherwise.
     """
 
     # Get the real path of the data directory
