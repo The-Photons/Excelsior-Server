@@ -22,4 +22,7 @@ dynamic = ["version"]
 
 [project.scripts]
 start_encrypted_file_server = "encrypted_file_server.server.wsgi:run"
+start_server = "encrypted_file_server.server.wsgi:run"
 generate_encrypt_params = "encrypted_file_server.generate_encrypt_params:run"
+generate_params = "encrypted_file_server.generate_encrypt_params:run"
+gen_params = "encrypted_file_server.generate_encrypt_params:run"
