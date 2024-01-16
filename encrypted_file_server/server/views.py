@@ -52,7 +52,6 @@ def get_encryption_parameters():
     :return: Dictionary of the status of the operation and the encryption parameters.
     """
 
-    # TODO: Handle missing AES key file
     with open(encryptedParamsFile, "r") as f:
         encryption_params = json.load(f)
         return {
@@ -161,6 +160,7 @@ def get_file(unsafe_path: str):
     :return: Dictionary containing two things. The first is the status -- `ok` or `not found`. If `ok` then the second
              is the Base64 content of the file.
     """
+    # TODO: What if file too big?
 
     # Add the data directory to the unsafe path
     unsafe_path = Path(filesDir, unsafe_path)
