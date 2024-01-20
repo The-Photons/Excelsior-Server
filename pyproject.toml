@@ -14,6 +14,8 @@ requires-python = ">=3.8"
 dependencies = [
     "Flask~=3.0.0",
     "Flask-Limiter~=3.5.0",
+    "flask-sqlalchemy~=3.1.0",
+    "flask-login~=0.6.3",
     "pycryptodome~=3.19.1",
     "PyYAML~=6.0.1",
     "gunicorn~=21.2.0"
