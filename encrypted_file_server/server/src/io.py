@@ -1,7 +1,7 @@
 # IMPORTS
 import os
 from pathlib import Path
-from typing import Optional, Union, List
+from typing import Optional
 
 from encrypted_file_server.server.src.misc import natural_sort
 

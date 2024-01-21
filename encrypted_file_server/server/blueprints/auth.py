@@ -10,6 +10,7 @@ auth = Blueprint("auth", __name__, url_prefix="/auth")
 
 
 # ROUTES
+# Main authentication routes
 @auth.route("/login", methods=["POST"])
 def login():
     # Get the required things from the request form
@@ -19,12 +20,12 @@ def login():
     # Try and get the user
     user = User.query.filter_by(username=username).first()
     if not user:
-        return "Invalid username", 403
+        return {"status": "fail", "message": "Invalid username"}, 403
     elif not check_password_hash(user.password, password):
-        return "Wrong password", 403
+        return {"status": "fail", "message": "Wrong password"}, 403
     else:
         login_user(user, remember=False)
-        return f"Logged in as {user.username}"
+        return {"status": "ok", "message": f"Logged in as {user.username}"}
 
 
 @auth.route("/logout", methods=["GET"])
@@ -32,4 +33,16 @@ def login():
 def logout():
     username = current_user.username
     logout_user()
-    return f"Logged out {username}"
+    return {"status": "ok", "message": f"Logged out {username}"}
+
+
+# Miscellaneous routes
+@auth.route("/get-encryption-params", methods=["GET"])
+@login_required
+def get_encryption_parameters():
+    return {
+        "status": "ok",
+        "iv": current_user.iv,
+        "salt": current_user.salt,
+        "encrypted_key": current_user.encrypted_key
+    }

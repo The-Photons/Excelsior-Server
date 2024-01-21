@@ -1,10 +1,3 @@
-# from flask import Flask
-#
-# app = Flask(__name__)
-#
-# import encrypted_file_server.server.views
-
-
 # IMPORTS
 import os
 
@@ -25,7 +18,7 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY=os.getenv("SECRET_KEY", "insecure-c112afeef1b534d236a7d3bdb75e6247ef7c9b2677a68b181f46b45"),
-        SQLALCHEMY_DATABASE_URI=f"sqlite:///{DATABASE}",  # TODO: Customise
+        SQLALCHEMY_DATABASE_URI=f"sqlite:///{DATABASE}"
     )
 
     if test_config is None:
@@ -54,7 +47,6 @@ def create_app(test_config=None):
 
     @login_manager.user_loader
     def load_user(user_id):
-        # since the user_id is just the primary key of our user table, use it in the query for the user
         return User.query.get(int(user_id))
 
     # Check if database exists
@@ -63,12 +55,22 @@ def create_app(test_config=None):
         with app.app_context():
             db.create_all()
 
+    # Check if all users' folders exists within the instance
+    with app.app_context():
+        users = User.query.all()
+        for user in users:
+            path = os.path.join(app.instance_path, user.username)
+            if not os.path.isdir(path):
+                os.mkdir(path)
+
     # Register blueprints
     from encrypted_file_server.server.blueprints.auth import auth as auth_bp
-    app.register_blueprint(auth_bp)
-
     from encrypted_file_server.server.blueprints.file_ops import file_ops as file_ops_bp
+    from encrypted_file_server.server.blueprints.misc import misc as misc_bp
+
+    app.register_blueprint(auth_bp)
     app.register_blueprint(file_ops_bp)
+    app.register_blueprint(misc_bp)
 
     # Finally return the created app
     return app
