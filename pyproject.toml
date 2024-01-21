@@ -23,6 +23,4 @@ dependencies = [
 dynamic = ["version"]
 
 [project.scripts]
-start_encrypted_file_server = "encrypted_file_server.server.wsgi:run"
-start_server = "encrypted_file_server.server.wsgi:run"
-add_user = "encrypted_file_server.add_new_user:run"
+excelsior = "encrypted_file_server.cli.cli:main"

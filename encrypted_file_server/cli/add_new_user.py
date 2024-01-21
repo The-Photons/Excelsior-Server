@@ -23,7 +23,7 @@ def gen_aes_key(pwd: str, the_salt: str):
 
 
 # MAIN FUNCTIONS
-def run():
+def add_new_user():
     app = create_app()
     with app.app_context():
         # Get username first
@@ -34,14 +34,22 @@ def run():
             exit(1)
 
         # Then get password
-        password1 = "1"
-        password2 = "2"
-        while password1 != password2:
+        tries_left = 3
+        while tries_left > 0:
             password1 = getpass("Enter password: ")
             password2 = getpass("Confirm password: ")
 
             if password1 != password2:
-                print("Passwords do not match")
+                tries_left -= 1
+                print("Passwords do not match", end="")
+                if tries_left > 0:
+                    print(f"; {tries_left} attempt(s) remaining")
+                else:
+                    print()
+                    print("Failed to obtain matching passwords")
+                    exit(1)
+            else:
+                tries_left = 0
 
         # Generate encryption parameters
         iv = secrets.token_hex(8)
@@ -66,8 +74,8 @@ def run():
         db.session.add(new_user)
         db.session.commit()
 
-    print(f"Added {username} to the database!")
+    print(f"Added '{username}' to the database!")
 
 
 if __name__ == "__main__":
-    run()
+    add_new_user()
