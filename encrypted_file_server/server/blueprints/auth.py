@@ -13,19 +13,31 @@ auth = Blueprint("auth", __name__, url_prefix="/auth")
 # Main authentication routes
 @auth.route("/login", methods=["POST"])
 def login():
+    # Get some parameters from the URL parameters
+    url_params = request.args
+    actually_login = url_params.get("actually-login", True)
+
+    try:
+        actually_login = bool(actually_login)
+    except ValueError:
+        actually_login = True
+
     # Get the required things from the request form
     username = request.form.get("username")
-    password = request.form.get("password")
+    password = request.form.get("password", "")
 
     # Try and get the user
     user = User.query.filter_by(username=username).first()
     if not user:
-        return {"status": "fail", "message": "Invalid username"}, 403
+        return {"status": "fail", "message": "Invalid username"}
     elif not check_password_hash(user.password, password):
-        return {"status": "fail", "message": "Wrong password"}, 403
+        return {"status": "fail", "message": "Wrong password"}
     else:
-        login_user(user, remember=False)
-        return {"status": "ok", "message": f"Logged in as {user.username}"}
+        if actually_login:
+            login_user(user, remember=False)
+            return {"status": "ok", "message": f"Logged in as {user.username}"}
+        else:
+            return {"status": "ok", "message": f"Credentials valid for {user.username}"}
 
 
 @auth.route("/logout", methods=["GET"])
