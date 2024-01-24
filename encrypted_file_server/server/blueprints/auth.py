@@ -29,9 +29,9 @@ def login():
     # Try and get the user
     user = User.query.filter_by(username=username).first()
     if not user:
-        return {"status": "fail", "message": "Invalid username"}
+        return {"status": "fail", "error_code": 1, "message": "Invalid username"}
     elif not check_password_hash(user.password, password):
-        return {"status": "fail", "message": "Wrong password"}
+        return {"status": "fail", "error_code": 2, "message": "Wrong password"}
     else:
         if actually_login:
             login_user(user, remember=False)
