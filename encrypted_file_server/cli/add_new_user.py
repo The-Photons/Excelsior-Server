@@ -1,5 +1,6 @@
 # IMPORTS
 import base64
+import os
 import secrets
 from hashlib import pbkdf2_hmac
 from getpass import getpass
@@ -8,7 +9,7 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad
 from werkzeug.security import generate_password_hash
 
-from encrypted_file_server.server import create_app, db
+from encrypted_file_server.server import create_app, db, DATABASE
 from encrypted_file_server.server.src.models import User
 
 
@@ -26,6 +27,17 @@ def gen_aes_key(pwd: str, the_salt: str):
 def add_new_user():
     app = create_app()
     with app.app_context():
+        # Ensure the instance folder exists
+        try:
+            os.makedirs(app.instance_path)
+        except OSError:
+            pass
+
+        # Check if database exists
+        if not os.path.isfile(os.path.join(app.instance_path, DATABASE)):
+            with app.app_context():
+                db.create_all()
+
         # Get username first
         username = input("Enter username: ")
 
