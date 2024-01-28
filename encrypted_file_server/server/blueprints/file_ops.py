@@ -88,6 +88,29 @@ def recursive_list_dir():
     return {"status": "ok", "content": items}
 
 
+@file_ops.route("/path-exists/<path:unsafe_path>", methods=["GET"])
+@login_required
+def path_exists(unsafe_path: str):
+    """
+    Checks whether there is a file or folder at the specified path.
+    :param unsafe_path: Path to the (possible) file.
+    :return: Dictionary containing two things. The first is the status -- `ok` or `error`. If `ok` then the second
+             is a boolean, describing whether the file or folder exists or not.
+    """
+
+    # Add the data directory to the unsafe path
+    unsafe_path = Path(user_folder(), unsafe_path)
+
+    # Check the requested path by the user
+    if not is_path_safe(user_folder(), unsafe_path):
+        abort(403)
+
+    # If reached here the path should be safe
+    path = unsafe_path
+
+    return {"status": "ok", "exists": os.path.exists(path)}
+
+
 @file_ops.route("/get-file/<path:unsafe_path>", methods=["GET"])
 @login_required
 def get_file(unsafe_path: str):
