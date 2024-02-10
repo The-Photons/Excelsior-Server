@@ -4,7 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
-from flask import Blueprint, request, current_app, abort
+from flask import Blueprint, request, current_app, abort, send_from_directory
 from flask_login import login_required, current_user
 
 from encrypted_file_server.server.src.io import get_items_in_dir, traverse_dir, is_path_safe
@@ -117,30 +117,10 @@ def get_file(unsafe_path: str):
     """
     Gets a file with the specified path.
     :param unsafe_path: Path to the file.
-    :return: Dictionary containing two things. The first is the status -- `ok` or `not found`. If `ok` then the second
-             is the Base64 content of the file.
+    :return: File content.
     """
-    # TODO: What if file too big?
 
-    # Add the data directory to the unsafe path
-    unsafe_path = Path(user_folder(), unsafe_path)
-
-    # Check the requested path by the user
-    if not is_path_safe(user_folder(), unsafe_path):
-        abort(403)
-
-    # If reached here the path should be safe
-    path = unsafe_path
-
-    # Try to get the file
-    try:
-        with open(path, "rb") as f:
-            content = f.read()
-    except FileNotFoundError as e:
-        return {"status": "not found", "message": str(e)}
-
-    # Then encode the content in base64 and send it
-    return {"status": "ok", "content": base64.b64encode(content).decode("utf-8")}
+    return send_from_directory(user_folder(), unsafe_path)
 
 
 @file_ops.route("/create-dir/<path:unsafe_path>", methods=["POST"])
@@ -177,12 +157,11 @@ def create_file(unsafe_path: str):
     Creates a new file in the data directory.
     The content of the file should be specified in Base64 using a POST form, with the key `content`.
     :param unsafe_path: Path to create the file.
-    :return: Status of the creation -- `ok` or `not found`.
+    :return: Status of the creation -- "ok" or "fail".
     """
 
     # Add the data directory to the unsafe path
     unsafe_path = Path(user_folder(), unsafe_path)
-    content = request.form.get("content")
 
     # Check the requested path by the user
     if not is_path_safe(user_folder(), unsafe_path):
@@ -191,16 +170,16 @@ def create_file(unsafe_path: str):
     # If reached here the path should be safe
     path = unsafe_path
 
-    # Decode the content of the file
-    content = base64.b64decode(content)
+    # Check that the POST request contains a file
+    if "file" not in request.files:
+        return {"status": "fail", "message": "No file part"}
+    file = request.files["file"]
+    if file.filename == "":
+        return {"status": "fail", "message": "No file provided"}
 
     # Now save the file
-    try:
-        with open(path, "wb") as f:
-            f.write(content)
-            return {"status": "ok"}
-    except FileNotFoundError as e:
-        return {"status": "not found", "message": str(e)}
+    file.save(path)
+    return {"status": "ok"}
 
 
 @file_ops.route("/delete-item/<path:unsafe_path>", methods=["DELETE"])
