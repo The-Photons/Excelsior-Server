@@ -5,7 +5,7 @@ import shutil
 from flask import Blueprint, request, current_app, abort, send_from_directory
 from flask_login import login_required, current_user
 
-from encrypted_file_server.server.src.io import get_items_in_dir, is_path_safe
+from encrypted_file_server.server.src.io import get_items_in_dir, is_path_safe, get_dir_size
 
 # BLUEPRINT DEFINITION
 file_ops = Blueprint("file_ops", __name__)
@@ -33,18 +33,31 @@ def list_dir():
 
     # Get the path from the URL parameters
     url_params = request.args
-    provided_path = url_params.get("path", "")
+    rel_path = url_params.get("path", "")
 
     # Now properly create the unsafe path WRT the files directory
-    unsafe_path = os.path.join(user_folder(), provided_path)
+    unsafe_abs_path = os.path.join(user_folder(), rel_path)
 
     # Check the requested path by the user
-    if not is_path_safe(user_folder(), unsafe_path):
+    if not is_path_safe(user_folder(), unsafe_abs_path):
         abort(403)
 
     # If reached here the path should be safe
-    path = unsafe_path
-    return {"status": "ok", "content": get_items_in_dir(path, prev_dir=provided_path)}
+    abs_path = unsafe_abs_path
+
+    # Get the items in the directory
+    items = get_items_in_dir(abs_path, prev_dir=rel_path)
+    if items is None:
+        return {"status": "not found"}
+
+    return {
+        "status": "ok",
+        "name": os.path.basename(rel_path),
+        "path": rel_path,
+        "type": "directory",
+        "items": items,
+        "size": get_dir_size(abs_path)
+    }
 
 
 @file_ops.route("/path-exists/<path:unsafe_path>", methods=["GET"])
