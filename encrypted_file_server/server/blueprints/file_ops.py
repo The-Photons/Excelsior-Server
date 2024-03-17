@@ -1,12 +1,11 @@
 # IMPORTS
 import os
 import shutil
-from pathlib import Path
 
 from flask import Blueprint, request, current_app, abort, send_from_directory
 from flask_login import login_required, current_user
 
-from encrypted_file_server.server.src.io import get_items_in_dir, traverse_dir, is_path_safe
+from encrypted_file_server.server.src.io import get_items_in_dir, is_path_safe
 
 # BLUEPRINT DEFINITION
 file_ops = Blueprint("file_ops", __name__)
@@ -18,7 +17,7 @@ def user_folder():
     Gets the user folder.
     :return: Path to the user folder.
     """
-    return Path(current_app.instance_path, current_user.username)
+    return os.path.join(current_app.instance_path, current_user.username)
 
 
 # ROUTES
@@ -34,16 +33,16 @@ def list_dir():
 
     # Get the path from the URL parameters
     url_params = request.args
-    unsafe_path = url_params.get("path", "")
-    alternate_units = url_params.get("alternate_units", False)
+    provided_path = url_params.get("path", "")
+    alt_units = url_params.get("alt_units", False)
 
     try:
-        alternate_units = bool(alternate_units)
+        alt_units = bool(alt_units)
     except ValueError:
-        alternate_units = False
+        alt_units = False
 
     # Now properly create the unsafe path WRT the files directory
-    unsafe_path = Path(user_folder(), unsafe_path)
+    unsafe_path = os.path.join(user_folder(), provided_path)
 
     # Check the requested path by the user
     if not is_path_safe(user_folder(), unsafe_path):
@@ -51,40 +50,7 @@ def list_dir():
 
     # If reached here the path should be safe
     path = unsafe_path
-    return {"status": "ok", "content": get_items_in_dir(path, alternate_units=alternate_units)}
-
-
-@file_ops.route("/recursive-list-dir", methods=["GET"])
-@login_required
-def recursive_list_dir():
-    """
-    Lists what is in the specified directory recursively.
-    Directory to list is to be specified using URL parameters.
-    :return: Dictionary containing the status of the operation and the list of items in the specified directory, along
-             with their type.
-    """
-
-    # Get the path from the URL parameters
-    url_params = request.args
-    unsafe_path = url_params.get("path", "")
-
-    # Now properly create the unsafe path WRT the files directory
-    unsafe_path = Path(user_folder(), unsafe_path)
-
-    # Check the requested path by the user
-    if not is_path_safe(user_folder(), unsafe_path):
-        abort(403)
-
-    # If reached here the path should be safe
-    path = unsafe_path
-
-    # Get the items in the directory
-    items = traverse_dir(path)
-
-    # For each path, remove the "data/files" starting string
-    items = [item[len(str(user_folder())):] for item in items]
-
-    return {"status": "ok", "content": items}
+    return {"status": "ok", "content": get_items_in_dir(path, prev_dir=provided_path, alt_units=alt_units)}
 
 
 @file_ops.route("/path-exists/<path:unsafe_path>", methods=["GET"])
@@ -98,7 +64,7 @@ def path_exists(unsafe_path: str):
     """
 
     # Add the data directory to the unsafe path
-    unsafe_path = Path(user_folder(), unsafe_path)
+    unsafe_path = os.path.join(user_folder(), unsafe_path)
 
     # Check the requested path by the user
     if not is_path_safe(user_folder(), unsafe_path):
@@ -132,7 +98,7 @@ def create_dir(unsafe_path: str):
     """
 
     # Add the data directory to the unsafe path
-    unsafe_path = Path(user_folder(), unsafe_path)
+    unsafe_path = os.path.join(user_folder(), unsafe_path)
 
     # Check the requested path by the user
     if not is_path_safe(user_folder(), unsafe_path):
@@ -160,7 +126,7 @@ def create_file(unsafe_path: str):
     """
 
     # Add the data directory to the unsafe path
-    unsafe_path = Path(user_folder(), unsafe_path)
+    unsafe_path = os.path.join(user_folder(), unsafe_path)
 
     # Check the requested path by the user
     if not is_path_safe(user_folder(), unsafe_path):
@@ -191,7 +157,7 @@ def delete_item(unsafe_path: str):
     """
 
     # Add the data directory to the unsafe path
-    unsafe_path = Path(user_folder(), unsafe_path)
+    unsafe_path = os.path.join(user_folder(), unsafe_path)
 
     # Check the requested path by the user
     if not is_path_safe(user_folder(), unsafe_path):

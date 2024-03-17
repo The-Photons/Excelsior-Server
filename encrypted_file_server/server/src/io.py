@@ -1,6 +1,5 @@
 # IMPORTS
 import os
-from pathlib import Path
 from typing import Optional
 
 from encrypted_file_server.server.src.misc import natural_sort
@@ -16,17 +15,17 @@ GIBIBYTE = KIBIBYTE * KIBIBYTE * KIBIBYTE
 
 
 # FUNCTIONS
-def nice_file_size(size: int, dp: int = 2, alternate_units: bool = False) -> str:
+def nice_file_size(size: int, dp: int = 2, alt_units: bool = False) -> str:
     """
     Converts a raw size in bytes into a nicer display text.
     :param size: Size of the file in bytes.
     :param dp: Number of decimal places to round the number of bytes.
-    :param alternate_units: Use IEC 80000-13:2008 format instead of SI format (i.e., kibibytes, mebibytes, gibibytes
-    instead of kilobytes, megabytes, gigabytes)
+    :param alt_units: Use IEC 80000-13:2008 format instead of SI format (i.e., kibibytes, mebibytes, gibibytes instead
+    of kilobytes, megabytes, gigabytes)
     :return: Nicer display format of the size.
     """
 
-    if alternate_units:
+    if alt_units:
         if size / GIBIBYTE >= 1:
             return f"{size / GIBIBYTE:.0{dp}f} GiB"
         if size / MEBIBYTE >= 1:
@@ -59,12 +58,13 @@ def get_dir_size(path):
     return total_size
 
 
-def get_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False) -> Optional[list[dict[str, str]]]:
+def get_items_in_dir(directory: str, prev_dir: str = "", alt_units: bool = False) -> Optional[list[dict[str, str]]]:
     """
     List all data in the given directory.
     :param directory: Directory to give the list of data of.
-    :param alternate_units: Use IEC 80000-13:2008 format instead of SI format (i.e., kibibytes, mebibytes, gibibytes
-    instead of kilobytes, megabytes, gigabytes)
+    :param prev_dir: Previous directory.
+    :param alt_units: Use IEC 80000-13:2008 format instead of SI format (i.e., kibibytes, mebibytes, gibibytes instead
+    of kilobytes, megabytes, gigabytes)
     :return: List of data in the given directory, or `None` if no data are found.
     """
 
@@ -76,58 +76,31 @@ def get_items_in_dir(directory: os.PathLike[str], alternate_units: bool = False)
 
     # Now get the properties of the item
     items = []
-    for item in dir_content:
-        item_path = os.path.join(directory, item)
-        if os.path.isfile(item_path):
-            item_type = "file"
-            file_size = os.stat(item_path).st_size
+    for item_name in dir_content:
+        item_abs_path = os.path.join(directory, item_name)
+        item_rel_path = os.path.join(prev_dir, item_name)
+        if os.path.isfile(item_abs_path):
+            items.append({
+                "name": item_name,
+                "path": item_rel_path,
+                "type": "file",
+                "size": nice_file_size(os.stat(item_abs_path).st_size, alt_units=alt_units)
+            })
         else:
-            item_type = "directory"
-            file_size = get_dir_size(item_path)
-        items.append({
-            "name": item,
-            "type": item_type,
-            "size": nice_file_size(file_size, alternate_units=alternate_units)
-        })
+            items.append({
+                "name": item_name,
+                "path": item_rel_path,
+                "type": "directory",
+                "items": get_items_in_dir(item_abs_path, prev_dir=os.path.join(prev_dir, item_name),
+                                          alt_units=alt_units),
+                "size": nice_file_size(get_dir_size(item_abs_path), alt_units=alt_units)
+            })
 
     # Don't care about cases when sorting
     return sorted(items, key=lambda x: natural_sort(f"{x['type']}-{x['name']}"))
 
 
-def traverse_dir(directory: os.PathLike[str]) -> Optional[list[str]]:
-    """
-    Recursively list the items in the directory.
-
-    :param directory: Directory to give the list of data of.
-    :return: List of data in the given directory, or `None` if no data are found.
-    """
-
-    # First list all the things in the directory
-    try:
-        dir_content = os.listdir(directory)
-    except FileNotFoundError:
-        return None
-
-    # Now get the properties of the item
-    items = []
-    for item in dir_content:
-        item_path = Path(os.path.join(directory, item))
-        add_item = True
-        if os.path.isdir(item_path):
-            sub_items = traverse_dir(item_path)
-            if len(sub_items) != 0:
-                items += sub_items
-            else:
-                add_item = False
-
-        if add_item:
-            items.append(str(item_path))
-
-    # Don't care about cases when sorting
-    return sorted(items)
-
-
-def is_path_safe(files_dir: os.PathLike[str], unsafe_path: os.PathLike[str]) -> bool:
+def is_path_safe(files_dir: str, unsafe_path: str) -> bool:
     """
     Checks if the requested file path by the user is safe.
     :param files_dir: Path to the data directory.
