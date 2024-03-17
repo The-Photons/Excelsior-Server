@@ -1,5 +1,4 @@
 # IMPORTS
-import base64
 import os
 import shutil
 from pathlib import Path

@@ -2,6 +2,8 @@
 import os
 
 from flask import Flask
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 
@@ -27,6 +29,14 @@ def create_app(test_config=None):
     else:
         # Load the test config if passed in
         app.config.from_mapping(test_config)
+
+    # Limit the number of requests that can be made to the application routes
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["5 per second"],
+        storage_uri="memory://",
+    )
 
     # Ensure the instance folder exists
     try:
