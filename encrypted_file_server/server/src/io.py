@@ -4,44 +4,8 @@ from typing import Optional
 
 from encrypted_file_server.server.src.misc import natural_sort
 
-# CONSTANTS
-KILOBYTE = 1000
-MEGABYTE = KILOBYTE * KILOBYTE
-GIGABYTE = KILOBYTE * KILOBYTE * KILOBYTE
-
-KIBIBYTE = 1024
-MEBIBYTE = KIBIBYTE * KIBIBYTE
-GIBIBYTE = KIBIBYTE * KIBIBYTE * KIBIBYTE
-
 
 # FUNCTIONS
-def nice_file_size(size: int, dp: int = 2, alt_units: bool = False) -> str:
-    """
-    Converts a raw size in bytes into a nicer display text.
-    :param size: Size of the file in bytes.
-    :param dp: Number of decimal places to round the number of bytes.
-    :param alt_units: Use IEC 80000-13:2008 format instead of SI format (i.e., kibibytes, mebibytes, gibibytes instead
-    of kilobytes, megabytes, gigabytes)
-    :return: Nicer display format of the size.
-    """
-
-    if alt_units:
-        if size / GIBIBYTE >= 1:
-            return f"{size / GIBIBYTE:.0{dp}f} GiB"
-        if size / MEBIBYTE >= 1:
-            return f"{size / MEBIBYTE:.0{dp}f} MiB"
-        if size / KIBIBYTE >= 1:
-            return f"{size / KIBIBYTE:.0{dp}f} KiB"
-    else:
-        if size / GIGABYTE >= 1:
-            return f"{size / GIGABYTE:.0{dp}f} GB"
-        if size / MEGABYTE >= 1:
-            return f"{size / MEGABYTE:.0{dp}f} MB"
-        if size / KILOBYTE >= 1:
-            return f"{size / KILOBYTE:.0{dp}f} kB"
-    return f"{size} B"
-
-
 def get_dir_size(path):
     """
     Get the full size of the directory.
@@ -58,13 +22,11 @@ def get_dir_size(path):
     return total_size
 
 
-def get_items_in_dir(directory: str, prev_dir: str = "", alt_units: bool = False) -> Optional[list[dict[str, str]]]:
+def get_items_in_dir(directory: str, prev_dir: str = "") -> Optional[list[dict[str, str]]]:
     """
     List all data in the given directory.
     :param directory: Directory to give the list of data of.
     :param prev_dir: Previous directory.
-    :param alt_units: Use IEC 80000-13:2008 format instead of SI format (i.e., kibibytes, mebibytes, gibibytes instead
-    of kilobytes, megabytes, gigabytes)
     :return: List of data in the given directory, or `None` if no data are found.
     """
 
@@ -84,16 +46,15 @@ def get_items_in_dir(directory: str, prev_dir: str = "", alt_units: bool = False
                 "name": item_name,
                 "path": item_rel_path,
                 "type": "file",
-                "size": nice_file_size(os.stat(item_abs_path).st_size, alt_units=alt_units)
+                "size": os.stat(item_abs_path).st_size
             })
         else:
             items.append({
                 "name": item_name,
                 "path": item_rel_path,
                 "type": "directory",
-                "items": get_items_in_dir(item_abs_path, prev_dir=os.path.join(prev_dir, item_name),
-                                          alt_units=alt_units),
-                "size": nice_file_size(get_dir_size(item_abs_path), alt_units=alt_units)
+                "items": get_items_in_dir(item_abs_path, prev_dir=os.path.join(prev_dir, item_name)),
+                "size": get_dir_size(item_abs_path)
             })
 
     # Don't care about cases when sorting

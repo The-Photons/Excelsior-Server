@@ -34,12 +34,6 @@ def list_dir():
     # Get the path from the URL parameters
     url_params = request.args
     provided_path = url_params.get("path", "")
-    alt_units = url_params.get("alt_units", False)
-
-    try:
-        alt_units = bool(alt_units)
-    except ValueError:
-        alt_units = False
 
     # Now properly create the unsafe path WRT the files directory
     unsafe_path = os.path.join(user_folder(), provided_path)
@@ -50,7 +44,7 @@ def list_dir():
 
     # If reached here the path should be safe
     path = unsafe_path
-    return {"status": "ok", "content": get_items_in_dir(path, prev_dir=provided_path, alt_units=alt_units)}
+    return {"status": "ok", "content": get_items_in_dir(path, prev_dir=provided_path)}
 
 
 @file_ops.route("/path-exists/<path:unsafe_path>", methods=["GET"])
