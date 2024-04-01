@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from encrypted_file_server.server.src.io import get_items_in_dir, is_path_safe, get_dir_size
 
 # BLUEPRINT DEFINITION
-file_ops = Blueprint("file_ops", __name__)
+file_ops = Blueprint("file_ops", __name__, url_prefix="/file-ops")
 
 
 # HELPER FUNCTIONS
